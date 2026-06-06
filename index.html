@@ -1,12 +1,11 @@
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quản lý nhận xét học sinh</title>
+<title>Nhận xét học sinh</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 
 <style>
 body{
@@ -42,6 +41,18 @@ button{
     cursor:pointer;
 }
 
+.add-btn{
+    background:#007bff;
+    color:white;
+    border:none;
+}
+
+.export-btn{
+    background:#28a745;
+    color:white;
+    border:none;
+}
+
 table{
     width:100%;
     border-collapse:collapse;
@@ -54,19 +65,6 @@ table,th,td{
 
 th,td{
     padding:8px;
-    text-align:left;
-}
-
-.export-btn{
-    background:#28a745;
-    color:white;
-    border:none;
-}
-
-.add-btn{
-    background:#007bff;
-    color:white;
-    border:none;
 }
 </style>
 </head>
@@ -136,7 +134,7 @@ th,td{
 <table id="dataTable">
 <thead>
 <tr>
-<th>Ngày</th>
+<th>Ngày học</th>
 <th>Lớp</th>
 <th>Học sinh</th>
 <th>Nội dung bài học</th>
@@ -151,12 +149,21 @@ th,td{
 
 <script>
 
-let records=[];
+let records = [];
 
 function addRecord(){
 
+const rawDate = document.getElementById("date").value;
+
+let formattedDate = "";
+
+if(rawDate){
+    const [year, month, day] = rawDate.split("-");
+    formattedDate = `${day}-${month}-${year}`;
+}
+
 const row = {
-date: document.getElementById("date").value,
+date: formattedDate,
 className: document.getElementById("class").value,
 student: document.getElementById("student").value,
 lesson: document.getElementById("lesson").value,
@@ -168,7 +175,7 @@ attendance: document.getElementById("attendance").value
 
 records.push(row);
 
-let tbody=document.querySelector("#dataTable tbody");
+const tbody = document.querySelector("#dataTable tbody");
 
 tbody.innerHTML += `
 <tr>
@@ -183,31 +190,100 @@ tbody.innerHTML += `
 </tr>
 `;
 
-document.getElementById("student").value="";
-document.getElementById("knowledge").value="";
-document.getElementById("skill").value="";
+document.getElementById("student").value = "";
+document.getElementById("knowledge").value = "";
+document.getElementById("skill").value = "";
 }
 
-function exportExcel(){
+async function exportExcel(){
 
-const worksheet = XLSX.utils.json_to_sheet(records);
+const workbook = new ExcelJS.Workbook();
 
-const workbook = XLSX.utils.book_new();
+const worksheet = workbook.addWorksheet("NhanXetHocSinh");
 
-XLSX.utils.book_append_sheet(
-workbook,
-worksheet,
-"NhanXetHocSinh"
+worksheet.columns = [
+{header:'Ngày học', key:'date', width:15},
+{header:'Lớp', key:'className', width:15},
+{header:'Học sinh', key:'student', width:25},
+{header:'Nội dung bài học', key:'lesson', width:40},
+{header:'Kiến thức', key:'knowledge', width:40},
+{header:'Kỹ năng', key:'skill', width:40},
+{header:'Thái độ', key:'attitude', width:20},
+{header:'Chuyên cần', key:'attendance', width:20}
+];
+
+records.forEach(r => worksheet.addRow(r));
+
+worksheet.eachRow((row,rowNumber)=>{
+
+row.eachCell(cell=>{
+
+cell.font = {
+name:'Times New Roman',
+size:12
+};
+
+cell.border = {
+top:{style:'thin'},
+left:{style:'thin'},
+bottom:{style:'thin'},
+right:{style:'thin'}
+};
+
+if(rowNumber === 1){
+
+cell.font = {
+name:'Times New Roman',
+size:12,
+bold:true
+};
+
+cell.alignment = {
+horizontal:'center',
+vertical:'middle'
+};
+
+}else{
+
+if(cell.col === 4 || cell.col === 5 || cell.col === 6){
+
+cell.alignment = {
+horizontal:'left',
+vertical:'top',
+wrapText:true
+};
+
+}else{
+
+cell.alignment = {
+horizontal:'center',
+vertical:'middle'
+};
+
+}
+}
+});
+});
+
+const buffer = await workbook.xlsx.writeBuffer();
+
+const blob = new Blob(
+[buffer],
+{
+type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+}
 );
 
-XLSX.writeFile(
-workbook,
-`NhanXetHocSinh_${new Date().getTime()}.xlsx`
-);
+const link = document.createElement("a");
+
+link.href = URL.createObjectURL(blob);
+
+link.download = `NhanXetHocSinh_${Date.now()}.xlsx`;
+
+link.click();
 }
 
 </script>
 
 </body>
 </html>
-```
