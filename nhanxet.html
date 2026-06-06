@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nhận xét học sinh</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+}
+
+.form-group{
+    margin-bottom:12px;
+}
+
+label{
+    display:block;
+    margin-bottom:5px;
+    font-weight:bold;
+}
+
+input,select,textarea{
+    width:100%;
+    padding:8px;
+    box-sizing:border-box;
+}
+
+button{
+    padding:10px 15px;
+    margin:5px;
+    cursor:pointer;
+}
+
+.add-btn{
+    background:#007bff;
+    color:white;
+    border:none;
+}
+
+.export-btn{
+    background:#28a745;
+    color:white;
+    border:none;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+table,th,td{
+    border:1px solid #ccc;
+}
+
+th,td{
+    padding:8px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Nhận xét học sinh</h1>
+
+<div class="form-group">
+<label>Ngày học</label>
+<input type="date" id="date">
+</div>
+
+<div class="form-group">
+<label>Lớp</label>
+<select id="class">
+<option>IELTS 2</option>
+<option>IELTS 3.25</option>
+<option>IELTS 6.26</option>
+<option>Kids 6</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Học sinh</label>
+<input type="text" id="student">
+</div>
+
+<div class="form-group">
+<label>Nội dung bài học</label>
+<textarea id="lesson"></textarea>
+</div>
+
+<div class="form-group">
+<label>Kiến thức</label>
+<textarea id="knowledge"></textarea>
+</div>
+
+<div class="form-group">
+<label>Kỹ năng</label>
+<textarea id="skill"></textarea>
+</div>
+
+<div class="form-group">
+<label>Thái độ</label>
+<select id="attitude">
+<option>Tích cực</option>
+<option>Hợp tác tốt</option>
+<option>Tập trung</option>
+<option>Cần tập trung hơn</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Chuyên cần</label>
+<select id="attendance">
+<option>Có mặt đầy đủ</option>
+<option>Đi trễ</option>
+<option>Vắng có phép</option>
+<option>Vắng không phép</option>
+</select>
+</div>
+
+<button class="add-btn" onclick="addRecord()">Thêm học sinh</button>
+<button class="export-btn" onclick="exportExcel()">Xuất Excel</button>
+
+<table id="dataTable">
+<thead>
+<tr>
+<th>Ngày học</th>
+<th>Lớp</th>
+<th>Học sinh</th>
+<th>Nội dung bài học</th>
+<th>Kiến thức</th>
+<th>Kỹ năng</th>
+<th>Thái độ</th>
+<th>Chuyên cần</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+
+let records = [];
+
+function addRecord(){
+
+const rawDate = document.getElementById("date").value;
+
+let formattedDate = "";
+
+if(rawDate){
+    const [year, month, day] = rawDate.split("-");
+    formattedDate = `${day}-${month}-${year}`;
+}
+
+const row = {
+date: formattedDate,
+className: document.getElementById("class").value,
+student: document.getElementById("student").value,
+lesson: document.getElementById("lesson").value,
+knowledge: document.getElementById("knowledge").value,
+skill: document.getElementById("skill").value,
+attitude: document.getElementById("attitude").value,
+attendance: document.getElementById("attendance").value
+};
+
+records.push(row);
+
+const tbody = document.querySelector("#dataTable tbody");
+
+tbody.innerHTML += `
+<tr>
+<td>${row.date}</td>
+<td>${row.className}</td>
+<td>${row.student}</td>
+<td>${row.lesson}</td>
+<td>${row.knowledge}</td>
+<td>${row.skill}</td>
+<td>${row.attitude}</td>
+<td>${row.attendance}</td>
+</tr>
+`;
+
+document.getElementById("student").value = "";
+document.getElementById("knowledge").value = "";
+document.getElementById("skill").value = "";
+}
+
+async function exportExcel(){
+
+const workbook = new ExcelJS.Workbook();
+
+const worksheet = workbook.addWorksheet("NhanXetHocSinh");
+
+worksheet.columns = [
+{header:'Ngày học', key:'date', width:15},
+{header:'Lớp', key:'className', width:15},
+{header:'Học sinh', key:'student', width:25},
+{header:'Nội dung bài học', key:'lesson', width:40},
+{header:'Kiến thức', key:'knowledge', width:40},
+{header:'Kỹ năng', key:'skill', width:40},
+{header:'Thái độ', key:'attitude', width:20},
+{header:'Chuyên cần', key:'attendance', width:20}
+];
+
+records.forEach(r => worksheet.addRow(r));
+
+worksheet.eachRow((row,rowNumber)=>{
+
+row.eachCell(cell=>{
+
+cell.font = {
+name:'Times New Roman',
+size:12
+};
+
+cell.border = {
+top:{style:'thin'},
+left:{style:'thin'},
+bottom:{style:'thin'},
+right:{style:'thin'}
+};
+
+if(rowNumber === 1){
+
+cell.font = {
+name:'Times New Roman',
+size:12,
+bold:true
+};
+
+cell.alignment = {
+horizontal:'center',
+vertical:'middle'
+};
+
+}else{
+
+if(cell.col === 4 || cell.col === 5 || cell.col === 6){
+
+cell.alignment = {
+horizontal:'left',
+vertical:'top',
+wrapText:true
+};
+
+}else{
+
+cell.alignment = {
+horizontal:'center',
+vertical:'middle'
+};
+
+}
+}
+});
+});
+
+const buffer = await workbook.xlsx.writeBuffer();
+
+const blob = new Blob(
+[buffer],
+{
+type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+}
+);
+
+const link = document.createElement("a");
+
+link.href = URL.createObjectURL(blob);
+
+link.download = `NhanXetHocSinh_${Date.now()}.xlsx`;
+
+link.click();
+}
+
+</script>
+
+</body>
+</html>
